@@ -1,5 +1,5 @@
 # linux-kernel-keystore
-[![cargo-badge-lib][]][cargo-lib] [![docs-badge-lib][]][docs-lib] [![license-badge][]][license] [![rust-version-badge][]][rust-version] [![build][]][build-url] [![codecov][]][codecov-url]
+[![cargo-badge-lib][]][cargo-lib] [![docs-badge-lib][]][docs-lib] [![license-badge][]][license] [![rust-version-badge][]][rust-version] [![build][]][build-url]
 
 This library provides a credential store for use with the [keyring crate](https://crates.io/crates/keyring) that uses the Linux key-management facility (keyctl).
 
@@ -43,11 +43,9 @@ additional terms or conditions.
 [license]: #license
 [rust-version-badge]: https://img.shields.io/badge/rust-latest%20stable-blue.svg?style=flat-square
 [rust-version]: #rust-version-policy
-[cargo-badge-lib]: https://img.shields.io/crates/v/linux-kernel-keystore.svg?style=flat-square&label=linux-keyutils
+[cargo-badge-lib]: https://img.shields.io/crates/v/linux-kernel-keystore.svg?style=flat-square&label=linux-kernel-keystore
 [cargo-lib]: https://crates.io/crates/linux-kernel-keystore
 [docs-badge-lib]: https://img.shields.io/docsrs/linux-kernel-keystore/latest?style=flat-square
 [docs-lib]: https://docs.rs/linux-kernel-keystore
-[codecov]: https://img.shields.io/codecov/c/github/landhb/linux-kernel-keystore?style=flat-square
-[codecov-url]: https://codecov.io/gh/landhb/linux-kernel-keystore
-[build]: https://img.shields.io/github/actions/workflow/status/landhb/linux-kernel-keystore/checks.yml?branch=main&style=flat-square
-[build-url]: https://github.com/landhb/linux-kernel-keystore/actions?query=workflow%3Achecks
+[build]: https://img.shields.io/github/actions/workflow/status/open-source-cooperative/linux-kernel-keystore/checks.yml?branch=main&style=flat-square
+[build-url]: https://github.com/open-source-cooperative/linux-kernel-keystore/actions?query=workflow%3Achecks
