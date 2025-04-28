@@ -42,8 +42,8 @@ impl CredentialApi for KeyutilsCredential {
         Ok(())
     }
 
-    /// TODO: Temporarily required until default is provided by the keyring
-    /// crate.
+    // TODO: Temporarily required until default is provided by the keyring
+    // crate.
     fn set_password(&self, password: &str) -> keyring::Result<()> {
         self.set_secret(password.as_bytes())
     }
@@ -56,8 +56,8 @@ impl CredentialApi for KeyutilsCredential {
         Ok(buffer)
     }
 
-    /// TODO: Temporarily required until default is provided by the keyring
-    /// crate.
+    // TODO: Temporarily required until default is provided by the keyring
+    // crate.
     fn get_password(&self) -> keyring::Result<String> {
         keyring::error::decode_password(self.get_secret()?)
     }
@@ -126,6 +126,10 @@ impl KeyutilsCredential {
         })
     }
 
+    /// Internal method to retrieve the underlying secret
+    ///
+    /// Will search for and re-link the existing key to the session and
+    /// persistent keyrings to ensure the key doesn't time out.
     fn get(&self) -> Result<Vec<u8>, KeyStoreError> {
         // Verify that the key exists and is valid
         let key = self.session.search(&self.description)?;
@@ -133,7 +137,7 @@ impl KeyutilsCredential {
         // Directly re-link to the session keyring
         // If a logout occurred, it will only be linked to the
         // persistent keyring, and needs to be added again.
-        self.session.link_key(key)?; //.map_err(decode_error)?;
+        self.session.link_key(key)?;
 
         // Directly re-link to the persistent keyring
         // If it expired, it will only be linked to the
@@ -147,6 +151,10 @@ impl KeyutilsCredential {
         Ok(data)
     }
 
+    /// Internal method to set the underlying secret
+    ///
+    /// Will add the key directly to the session and link it to the
+    /// persistent keyring when available.
     fn set<T: AsRef<[u8]>>(&self, secret: T) -> Result<(), KeyStoreError> {
         // Add to the session keyring
         let key = self.session.add_key(&self.description, &secret)?;
@@ -158,6 +166,9 @@ impl KeyutilsCredential {
         Ok(())
     }
 
+    /// Internal method to remove the underlying secret
+    ///
+    /// Performs a search and invalidates the key when found.
     fn remove(&self) -> Result<(), KeyStoreError> {
         // Verify that the key exists and is valid
         let key = self.session.search(&self.description)?;
