@@ -1,25 +1,24 @@
 /*!
-# Keystore for the keyring-rs crate
+# Credential store for the keyring crate
 
-This module implements a keystore for the keyring-rs crate that uses keyutils as its back end.
+This module implements a credential store for the keyring crate that uses keyutils as its back end.
 
 ## Usage
 
-If you are trying to use the keyring-rs crate on a headless linux box, or one that doesn't come with
+If you are trying to use the keyring crate on a headless linux box, or one that doesn't come with
 gnome-keyring, it's strongly recommended that you use this credential store, because (as part of the kernel)
 it's always available on Linux.
 
 To make this keystore the default for creation of keyring entries, execute this code:
 ```
-use linux_kernel_keystore::KeyutilsCredentialBuilder;
-keyring::set_default_credential_builder(KeyutilsCredentialBuilder::new())
+keyring::set_default_credential_builder(linux_kernel_keyring::KeyutilsCredentialBuilder::new())
 ```
 
 # Attributes
 
 Entries in keyutils are identified by a string `description`.  If a keyring entry is created with
 an explicit `target`, that value is used as the keyutils description.  Otherwise, the string
-`keyring-rs:user@service` is used (where user and service come from the entry creation call).
+`keyring:user@service` is used (where user and service come from the entry creation call).
 
 There is no notion of attribute other than the description supported by keyutils,
 so the [get_attributes](keyring::Entry::get_attributes)
@@ -41,7 +40,7 @@ Potential options to re-load the credential into memory are:
 - Create a PAM module or use `pam_exec` to load a credential securely when the user logs in.
 - If you're running as a systemd service you can use `systemd-ask-password` to prompt the user
   when your service starts.
-
+  
 ```
 use std::error::Error;
 use keyring::Entry;

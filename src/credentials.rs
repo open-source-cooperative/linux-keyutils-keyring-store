@@ -94,9 +94,9 @@ impl CredentialApi for KeyutilsCredential {
 impl KeyutilsCredential {
     /// Create the platform credential for a Keyutils entry.
     ///
-    /// An explicit target string is interpreted as the KeyRing to use for the entry.
+    /// An explicit target string is interpreted as the description to use for the entry.
     /// If none is provided, then we concatenate the user and service in the string
-    /// `keyring-rs:user@service`.
+    /// `keyring:user@service`.
     pub fn new_with_target(
         target: Option<&str>,
         service: &str,
@@ -117,7 +117,7 @@ impl KeyutilsCredential {
         let description = match target {
             Some("") => return Err(KeyStoreError(linux_keyutils::KeyError::InvalidArguments)),
             Some(value) => value.to_string(),
-            None => format!("keyring-rs:{user}@{service}"),
+            None => format!("keyring:{user}@{service}"),
         };
         Ok(Self {
             session,

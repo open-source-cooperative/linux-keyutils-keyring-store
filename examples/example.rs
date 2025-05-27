@@ -1,9 +1,7 @@
 //! Example CLI app that creates, writes, reads, examines, and deletes an entry
 //! in the keyutils keystore using APIs from the keyring crate.
-//!
-//! This example must be compiled with the keystore feature specified.
 use keyring::Entry;
-use linux_kernel_keystore::KeyutilsCredentialBuilder;
+use linux_keyutils_keyring::KeyutilsCredentialBuilder;
 
 fn main() {
     // Set keyutils backend as the default store
@@ -18,6 +16,15 @@ fn main() {
     if retrieved != password {
         panic!("Passwords do not match");
     }
-    println!("Entry: {:?}", entry);
-    entry.delete_credential().unwrap()
+    println!("Entry with no target: {:?}", entry);
+    entry.delete_credential().unwrap();
+    let target: &'static str = "target used as description";
+    let entry = Entry::new_with_target(target, "ignored", "ignored").unwrap();
+    entry.set_password(password).unwrap();
+    let retrieved = entry.get_password().unwrap();
+    if retrieved != password {
+        panic!("Passwords do not match");
+    }
+    println!("Entry with target: {:?}", entry);
+    entry.delete_credential().unwrap();
 }
