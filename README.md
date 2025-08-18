@@ -1,29 +1,12 @@
-# linux-kernel-keystore
-[![cargo-badge-lib][]][cargo-lib] [![docs-badge-lib][]][docs-lib] [![license-badge][]][license] [![rust-version-badge][]][rust-version] [![build][]][build-url]
+# Linux Keyutils Keyring Store
 
-This library provides a credential store for use with the [keyring crate](https://crates.io/crates/keyring) that uses the Linux key-management facility (keyctl).
+[![cargo-badge-lib][]][cargo-lib] [![docs-badge-lib][]][docs-lib] [![license-badge][]][license] [![build][]][build-url]
 
-## Basic Usage
+This library provides a credential store for use with the [keyring ecosystem](https://github.com/open-source-cooperative/keyring-rs/wiki/Keyring) that uses the Linux key-management facility (keyctl).
 
-To use `linux-kernel-keystore`, first add this to your `Cargo.toml`:
+## Usage
 
-```toml
-[dependencies]
-linux-kernel-keystore = "0.1"
-```
-
-To make this keystore the default for creation of keyring entries, construct a builder and use `set_default_credential_builder`:
-
-```rust
-use linux_kernel_keystore::KeyutilsCredentialBuilder;
-
-fn main() {
-    // Set keyutils backend as the default store
-    keyring::set_default_credential_builder(KeyutilsCredentialBuilder::new());
-}
-```
-
-For more information please view the full [documentation](https://docs.rs/linux-kernel-keystore). There is also a small example program in the [examples directory](examples/keystore.rs).
+To use this keychain-compatible credential store provider, you must take a dependency on the [keyring-core crate](https://crates.io/crates/keyring-core) and on [this crate](https://crates.io/crates/linux-keyutils-keyring-store). Then you can instantiate a credential store and set it as your default credential store as shown in the [sample program](examples/example.rs) in this crate.
 
 ## License
 
@@ -42,7 +25,6 @@ additional terms or conditions.
 [license-badge]: https://img.shields.io/badge/license-MIT/Apache--2.0-lightgray.svg?style=flat-square
 [license]: #license
 [rust-version-badge]: https://img.shields.io/badge/rust-latest%20stable-blue.svg?style=flat-square
-[rust-version]: #rust-version-policy
 [cargo-badge-lib]: https://img.shields.io/crates/v/linux-kernel-keystore.svg?style=flat-square&label=linux-kernel-keystore
 [cargo-lib]: https://crates.io/crates/linux-kernel-keystore
 [docs-badge-lib]: https://img.shields.io/docsrs/linux-kernel-keystore/latest?style=flat-square

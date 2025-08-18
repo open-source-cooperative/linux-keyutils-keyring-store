@@ -1,9 +1,9 @@
-use keyring::error::Error as KeyRingError;
+use keyring_core::error::Error as KeyRingError;
 use linux_keyutils::KeyError as KeyUtilsError;
 use std::ops::Deref;
 
-/// Internal newtype to convert linux_keyutils::KeyError to
-/// keyring::error::Error implicitly.
+/// Internal new type to convert linux_keyutils::KeyError to
+/// keyring_core::error::Error implicitly.
 pub(crate) struct KeyStoreError(pub(crate) KeyUtilsError);
 
 impl Deref for KeyStoreError {
@@ -26,16 +26,17 @@ impl From<KeyStoreError> for KeyRingError {
             // different errors that all mean "no such key", depending on where in the invalidation
             // processing the [get_password](KeyutilsCredential::get_password) call is made.
             KeyUtilsError::KeyDoesNotExist
-            | KeyUtilsError::AccessDenied
             | KeyUtilsError::KeyRevoked
             | KeyUtilsError::KeyExpired => KeyRingError::NoEntry,
+            KeyUtilsError::AccessDenied => KeyRingError::NoStorageAccess(err.0.into()),
             KeyUtilsError::InvalidDescription => KeyRingError::Invalid(
                 "description".to_string(),
-                "rejected by platform".to_string(),
+                "rejected by the platform".to_string(),
             ),
-            KeyUtilsError::InvalidArguments => {
-                KeyRingError::Invalid("password".to_string(), "rejected by platform".to_string())
-            }
+            KeyUtilsError::InvalidArguments => KeyRingError::Invalid(
+                "password".to_string(),
+                "rejected by the platform".to_string(),
+            ),
             other => KeyRingError::PlatformFailure(other.into()),
         }
     }

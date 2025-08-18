@@ -1,5 +1,5 @@
 [package]
-name = "linux-keyutils-keyring"
+name = "linux-keyutils-keyring-store"
 version = "0.1.0"
 edition = "2024"
 
@@ -7,7 +7,7 @@ edition = "2024"
 name = "example"
 
 [dependencies]
-keyring = { version = "4.0.0-rc.1", default-features = false, path = "../keyring-rs" }
+keyring-core = { version = "0.4", path = "../keyring-core" }
 linux-keyutils = { version = "0.2.4", features = ["std"] }
 
 [dev-dependencies]

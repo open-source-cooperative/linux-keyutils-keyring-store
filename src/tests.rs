@@ -1,36 +1,44 @@
-use super::{KeyutilsCredential, KeyutilsCredentialBuilder};
-use keyring::credential::{CredentialApi, CredentialBuilderApi, CredentialPersistence};
-use keyring::{Entry, Error as KeyRingError};
+use std::collections::HashMap;
+use std::sync::{Arc, Once};
 
-#[test]
-fn test_persistence() {
-    assert!(matches!(
-        KeyutilsCredentialBuilder::new().persistence(),
-        CredentialPersistence::UntilReboot
-    ))
+use keyring_core::{CredentialStore, Entry, Error, api::CredentialPersistence, get_default_store};
+
+use super::{Cred, Store};
+
+static SET_STORE: Once = Once::new();
+
+fn usually_goes_in_main() {
+    keyring_core::set_default_store(Store::new().unwrap());
 }
 
 #[test]
-fn test_keyring_integration() {
-    keyring::set_default_credential_builder(KeyutilsCredentialBuilder::new());
-    let entry = Entry::new("myservice", "user1").expect("Couldn't create entry");
-    test_round_trip_no_delete("Default backend for keyring-rs", &entry, "secret1");
+fn test_store_methods() {
+    SET_STORE.call_once(usually_goes_in_main);
+    let store = get_default_store().unwrap();
+    let vendor1 = store.vendor();
+    let id1 = store.id();
+    let vendor2 = store.vendor();
+    let id2 = store.id();
+    assert_eq!(vendor1, vendor2);
+    assert_eq!(id1, id2);
+    let store2: Arc<CredentialStore> = Store::new().unwrap();
+    let vendor3 = store2.vendor();
+    let id3 = store2.id();
+    assert_eq!(vendor1, vendor3);
+    assert_ne!(id1, id3);
 }
 
 fn entry_new(service: &str, user: &str) -> Entry {
-    let cred = KeyutilsCredential::new_with_target(None, service, user);
-    match cred {
-        Ok(cred) => Entry::new_with_credential(Box::new(cred)),
-        Err(err) => {
-            panic!("Couldn't create entry (service: {service}, user: {user}): {err:?}")
-        }
-    }
+    SET_STORE.call_once(usually_goes_in_main);
+    Entry::new(service, user).unwrap_or_else(|err| {
+        panic!("Couldn't create entry (service: {service}, user: {user}): {err:?}")
+    })
 }
 
 fn generate_random_string() -> String {
     use fastrand;
     use std::iter::repeat_with;
-    repeat_with(fastrand::alphanumeric).take(30).collect()
+    repeat_with(fastrand::alphanumeric).take(12).collect()
 }
 
 fn generate_random_bytes() -> Vec<u8> {
@@ -39,33 +47,34 @@ fn generate_random_bytes() -> Vec<u8> {
     repeat_with(|| fastrand::u8(..)).take(24).collect()
 }
 
+// A round-trip password test that doesn't delete the credential afterward
 fn test_round_trip_no_delete(case: &str, entry: &Entry, in_pass: &str) {
     entry
         .set_password(in_pass)
         .unwrap_or_else(|err| panic!("Can't set password for {case}: {err:?}"));
     let out_pass = entry
         .get_password()
-        .unwrap_or_else(|err| panic!("Can't get password for {case}: {err:?}"));
+        .unwrap_or_else(|err| panic!("Can't get password: {case}: {err:?}"));
     assert_eq!(
         in_pass, out_pass,
         "Passwords don't match for {case}: set='{in_pass}', get='{out_pass}'",
     )
 }
 
-/// A basic round-trip unit test given an entry and a password.
+// A round-trip password test that does delete the credential afterward
 fn test_round_trip(case: &str, entry: &Entry, in_pass: &str) {
     test_round_trip_no_delete(case, entry, in_pass);
     entry
         .delete_credential()
-        .unwrap_or_else(|err| panic!("Can't delete password for {case}: {err:?}"));
+        .unwrap_or_else(|err| panic!("Can't delete password: {case}: {err:?}"));
     let password = entry.get_password();
     assert!(
-        matches!(password, Err(KeyRingError::NoEntry)),
-        "Read deleted password for {case}",
+        matches!(password, Err(Error::NoEntry)),
+        "Got a deleted password: {case}",
     );
 }
 
-/// A basic round-trip unit test given an entry and a secret.
+// A round-trip secret test that does delete the credential afterward
 pub fn test_round_trip_secret(case: &str, entry: &Entry, in_secret: &[u8]) {
     entry
         .set_secret(in_secret)
@@ -75,44 +84,49 @@ pub fn test_round_trip_secret(case: &str, entry: &Entry, in_secret: &[u8]) {
         .unwrap_or_else(|err| panic!("Can't get secret for {case}: {err:?}"));
     assert_eq!(
         in_secret, &out_secret,
-        "Passwords don't match for {case}: set='{in_secret:?}', get='{out_secret:?}'",
+        "Secrets don't match for {case}: set='{in_secret:?}', get='{out_secret:?}'",
     );
     entry
         .delete_credential()
-        .unwrap_or_else(|err| panic!("Can't delete password for {case}: {err:?}"));
-    let password = entry.get_secret();
+        .unwrap_or_else(|err| panic!("Can't delete credential for {case}: {err:?}"));
+    let secret = entry.get_secret();
     assert!(
-        matches!(password, Err(KeyRingError::NoEntry)),
-        "Read deleted password for {case}",
+        matches!(secret, Err(Error::NoEntry)),
+        "Got a deleted password: {case}",
     );
-}
-
-#[test]
-fn test_empty_service_and_user() {
-    let name = generate_random_string();
-    let in_pass = "doesn't matter";
-    test_round_trip("empty user", &entry_new(&name, ""), in_pass);
-    test_round_trip("empty service", &entry_new("", &name), in_pass);
-    test_round_trip("empty service & user", &entry_new("", ""), in_pass);
 }
 
 #[test]
 fn test_invalid_parameter() {
-    let credential = KeyutilsCredential::new_with_target(Some(""), "service", "user");
-    assert!(
-        matches!(credential, Err(KeyRingError::Invalid(_, _))),
-        "Created entry with empty target"
-    );
+    SET_STORE.call_once(usually_goes_in_main);
+    let modifiers = HashMap::from([("description", "")]);
+    let entry = Entry::new_with_modifiers("service", "user", &modifiers);
+    assert!(matches!(entry, Err(Error::Invalid(_, _))));
+    let store: Arc<CredentialStore> =
+        Store::new_with_configuration(&HashMap::from([("service_no_delimiter", "true")])).unwrap();
+    let entry = store.build("ser@vice", "user", None);
+    assert!(matches!(entry, Err(Error::Invalid(_, _))));
+    let store: Arc<CredentialStore> = Store::new_with_configuration(&HashMap::from([
+        ("service_no_delimiter", "true"),
+        ("delimiter", ""),
+    ]))
+    .unwrap();
+    let entry = store.build("service", "user", None);
+    assert!(matches!(entry, Err(Error::Invalid(_, _))));
 }
 
 #[test]
 fn test_missing_entry() {
     let name = generate_random_string();
     let entry = entry_new(&name, &name);
-    assert!(
-        matches!(entry.get_password(), Err(KeyRingError::NoEntry)),
-        "Missing entry has password"
-    )
+    assert!(matches!(entry.get_password(), Err(Error::NoEntry)))
+}
+
+#[test]
+fn test_empty_password() {
+    let name = generate_random_string();
+    let in_pass = "";
+    test_round_trip("empty password", &entry_new(&name, &name), in_pass);
 }
 
 #[test]
@@ -127,6 +141,22 @@ fn test_round_trip_non_ascii_password() {
     let name = generate_random_string();
     let entry = entry_new(&name, &name);
     test_round_trip("non-ascii password", &entry, "このきれいな花は桜です");
+}
+
+#[test]
+fn test_entries_with_same_and_different_specifiers() {
+    let name1 = generate_random_string();
+    let name2 = generate_random_string();
+    let entry1 = entry_new(&name1, &name2);
+    let entry2 = entry_new(&name1, &name2);
+    let entry3 = entry_new(&name2, &name1);
+    entry1.set_password("test password").unwrap();
+    let pw2 = entry2.get_password().unwrap();
+    assert_eq!(pw2, "test password");
+    _ = entry3.get_password().unwrap_err();
+    entry1.delete_credential().unwrap();
+    _ = entry2.get_password().unwrap_err();
+    entry3.delete_credential().unwrap_err();
 }
 
 #[test]
@@ -150,75 +180,181 @@ fn test_update() {
 }
 
 #[test]
-fn test_noop_get_update_attributes() {
-    use std::collections::HashMap;
-
+fn test_duplicate_entries() {
     let name = generate_random_string();
-    let entry = entry_new(&name, &name);
-    assert!(
-        matches!(entry.get_attributes(), Err(KeyRingError::NoEntry)),
-        "Read missing credential in attribute test",
-    );
-    let mut map: HashMap<&str, &str> = HashMap::new();
-    map.insert("test attribute name", "test attribute value");
-    assert!(
-        matches!(entry.update_attributes(&map), Err(KeyRingError::NoEntry)),
-        "Updated missing credential in attribute test",
-    );
-    // create the credential and test again
-    entry
-        .set_password("test password for attributes")
-        .unwrap_or_else(|err| panic!("Can't set password for attribute test: {err:?}"));
-    match entry.get_attributes() {
-        Err(err) => panic!("Couldn't get attributes: {err:?}"),
-        Ok(attrs) if attrs.is_empty() => {}
-        Ok(attrs) => panic!("Unexpected attributes: {attrs:?}"),
-    }
-    assert!(
-        matches!(entry.update_attributes(&map), Ok(())),
-        "Couldn't update attributes in attribute test",
-    );
-    match entry.get_attributes() {
-        Err(err) => panic!("Couldn't get attributes after update: {err:?}"),
-        Ok(attrs) if attrs.is_empty() => {}
-        Ok(attrs) => panic!("Unexpected attributes after update: {attrs:?}"),
-    }
-    entry
-        .delete_credential()
-        .unwrap_or_else(|err| panic!("Can't delete credential for attribute test: {err:?}"));
-    assert!(
-        matches!(entry.get_attributes(), Err(KeyRingError::NoEntry)),
-        "Read deleted credential in attribute test",
-    );
+    let entry1 = entry_new(&name, &name);
+    let entry2 = entry_new(&name, &name);
+    entry1.set_password("password for entry1").unwrap();
+    let password = entry2.get_password().unwrap();
+    assert_eq!(password, "password for entry1");
+    entry2.set_password("password for entry2").unwrap();
+    let password = entry1.get_password().unwrap();
+    assert_eq!(password, "password for entry2");
+    entry1.delete_credential().unwrap();
+    entry2.delete_credential().expect_err("Can delete entry2");
 }
 
 #[test]
-fn test_empty_password() {
-    let entry = entry_new("empty password service", "empty password user");
-    assert!(
-        matches!(entry.set_password(""), Err(KeyRingError::Invalid(_, _))),
-        "Able to set empty password"
-    );
+fn test_get_credential_and_specifiers() {
+    let name = generate_random_string();
+    let entry1 = entry_new(&name, &name);
+    assert!(matches!(entry1.get_credential(), Err(Error::NoEntry)));
+    entry1.set_password("password for entry1").unwrap();
+    let cred1 = entry1.as_any().downcast_ref::<Cred>().unwrap();
+    let wrapper = entry1.get_credential().unwrap();
+    let cred2 = wrapper.as_any().downcast_ref::<Cred>().unwrap();
+    assert_eq!(cred1 as *const _, cred2 as *const _);
+    let (service, user) = wrapper.get_specifiers().unwrap();
+    assert_eq!(service, name);
+    assert_eq!(user, name);
+    wrapper.delete_credential().unwrap();
+    entry1.delete_credential().unwrap_err();
+    wrapper.delete_credential().unwrap_err();
+    let modifiers = HashMap::from([("description", &name)]);
+    let entry2 = Entry::new_with_modifiers(&name, &name, &modifiers).unwrap();
+    assert!(entry2.get_specifiers().is_none());
+    entry2.delete_credential().unwrap();
 }
 
 #[test]
-fn test_get_credential() {
+fn test_create_then_move() {
     let name = generate_random_string();
     let entry = entry_new(&name, &name);
-    let credential: &KeyutilsCredential = entry
-        .get_credential()
-        .downcast_ref()
-        .expect("Not a Keyutils credential");
-    assert!(
-        entry.get_secret().is_err(),
-        "Platform credential shouldn't exist yet!"
-    );
-    entry
-        .set_password("test get_credential")
-        .expect("Can't set password for get_credential");
-    assert!(credential.get_secret().is_ok());
-    entry
-        .delete_credential()
-        .expect("Couldn't delete after get_credential");
-    assert!(matches!(entry.get_password(), Err(KeyRingError::NoEntry)));
+    let test = move || {
+        let password = "test ascii password";
+        entry.set_password(password).unwrap();
+        let stored_password = entry.get_password().unwrap();
+        assert_eq!(stored_password, password);
+        let password = "このきれいな花は桜です";
+        entry.set_password(password).unwrap();
+        let stored_password = entry.get_password().unwrap();
+        assert_eq!(stored_password, password);
+        entry.delete_credential().unwrap();
+        assert!(matches!(entry.get_password(), Err(Error::NoEntry)));
+    };
+    let handle = std::thread::spawn(test);
+    assert!(handle.join().is_ok(), "Couldn't execute on thread")
+}
+
+#[test]
+fn test_simultaneous_create_then_move() {
+    let mut handles = vec![];
+    for i in 0..10 {
+        let name = format!("{}-{}", generate_random_string(), i);
+        let entry = entry_new(&name, &name);
+        let test = move || {
+            entry.set_password(&name).unwrap();
+            let stored_password = entry.get_password().unwrap();
+            assert_eq!(stored_password, name);
+            entry.delete_credential().unwrap();
+            assert!(matches!(entry.get_password(), Err(Error::NoEntry)));
+        };
+        handles.push(std::thread::spawn(test))
+    }
+    for handle in handles {
+        handle.join().unwrap()
+    }
+}
+
+#[test]
+fn test_create_set_then_move() {
+    let name = generate_random_string();
+    let entry = entry_new(&name, &name);
+    let password = "test ascii password";
+    entry.set_password(password).unwrap();
+    let test = move || {
+        let stored_password = entry.get_password().unwrap();
+        assert_eq!(stored_password, password);
+        entry.delete_credential().unwrap();
+        assert!(matches!(entry.get_password(), Err(Error::NoEntry)));
+    };
+    let handle = std::thread::spawn(test);
+    assert!(handle.join().is_ok(), "Couldn't execute on thread")
+}
+
+#[test]
+fn test_simultaneous_create_set_then_move() {
+    let mut handles = vec![];
+    for i in 0..10 {
+        let name = format!("{}-{}", generate_random_string(), i);
+        let entry = entry_new(&name, &name);
+        entry.set_password(&name).unwrap();
+        let test = move || {
+            let stored_password = entry.get_password().unwrap();
+            assert_eq!(stored_password, name);
+            entry.delete_credential().unwrap();
+            assert!(matches!(entry.get_password(), Err(Error::NoEntry)));
+        };
+        handles.push(std::thread::spawn(test))
+    }
+    for handle in handles {
+        handle.join().unwrap()
+    }
+}
+
+#[test]
+fn test_simultaneous_independent_create_set() {
+    let mut handles = vec![];
+    for i in 0..10 {
+        let name = format!("thread_entry{i}");
+        let test = move || {
+            let entry = entry_new(&name, &name);
+            entry.set_password(&name).unwrap();
+            let stored_password = entry.get_password().unwrap();
+            assert_eq!(stored_password, name);
+            entry.delete_credential().unwrap();
+            assert!(matches!(entry.get_password(), Err(Error::NoEntry)));
+        };
+        handles.push(std::thread::spawn(test))
+    }
+    for handle in handles {
+        handle.join().unwrap()
+    }
+}
+
+#[test]
+fn test_multiple_create_delete_single_thread() {
+    let name = generate_random_string();
+    let entry = entry_new(&name, &name);
+    let repeats = 10;
+    for _i in 0..repeats {
+        entry.set_password(&name).unwrap();
+        let stored_password = entry.get_password().unwrap();
+        assert_eq!(stored_password, name);
+        entry.delete_credential().unwrap();
+        assert!(matches!(entry.get_password(), Err(Error::NoEntry)));
+    }
+}
+
+#[test]
+fn test_simultaneous_multiple_create_delete_single_thread() {
+    let mut handles = vec![];
+    for t in 0..10 {
+        let name = generate_random_string();
+        let test = move || {
+            let name = format!("{name}-{t}");
+            let entry = entry_new(&name, &name);
+            let repeats = 10;
+            for _i in 0..repeats {
+                entry.set_password(&name).unwrap();
+                let stored_password = entry.get_password().unwrap();
+                assert_eq!(stored_password, name);
+                entry.delete_credential().unwrap();
+                assert!(matches!(entry.get_password(), Err(Error::NoEntry)));
+            }
+        };
+        handles.push(std::thread::spawn(test))
+    }
+    for handle in handles {
+        handle.join().unwrap()
+    }
+}
+
+#[test]
+fn test_persistence() {
+    let store: Arc<CredentialStore> = Store::new().unwrap();
+    assert!(matches!(
+        store.persistence(),
+        CredentialPersistence::UntilReboot
+    ));
 }

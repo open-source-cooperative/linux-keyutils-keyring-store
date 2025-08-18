@@ -1,11 +1,13 @@
 //! Example CLI app that creates, writes, reads, examines, and deletes an entry
 //! in the keyutils keystore using APIs from the keyring crate.
-use keyring::Entry;
-use linux_keyutils_keyring::KeyutilsCredentialBuilder;
+use std::collections::HashMap;
+
+use keyring_core::Entry;
+use linux_keyutils_keyring_store::Store;
 
 fn main() {
     // Set keyutils backend as the default store
-    keyring::set_default_credential_builder(KeyutilsCredentialBuilder::new());
+    keyring_core::set_default_store(Store::new().unwrap());
 
     let service = "service";
     let username = "user";
@@ -18,13 +20,14 @@ fn main() {
     }
     println!("Entry with no target: {:?}", entry);
     entry.delete_credential().unwrap();
-    let target: &'static str = "target used as description";
-    let entry = Entry::new_with_target(target, "ignored", "ignored").unwrap();
+    let modifiers = HashMap::from([("description", "custom description")]);
+    let entry = Entry::new_with_modifiers("ignored", "ignored", &modifiers).unwrap();
     entry.set_password(password).unwrap();
     let retrieved = entry.get_password().unwrap();
     if retrieved != password {
         panic!("Passwords do not match");
     }
-    println!("Entry with target: {:?}", entry);
+    println!("Entry with custom description: {:?}", entry);
     entry.delete_credential().unwrap();
+    keyring_core::unset_default_store();
 }
