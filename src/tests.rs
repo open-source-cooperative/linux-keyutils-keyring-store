@@ -127,7 +127,10 @@ fn test_empty_password() {
     let name = generate_random_string();
     let in_pass = "";
     let entry = entry_new(&name, &name);
-    assert!(matches!(entry.set_password(in_pass), Err(Error::Invalid(_, _))));
+    assert!(matches!(
+        entry.set_password(in_pass),
+        Err(Error::Invalid(_, _))
+    ));
     _ = entry.delete_credential();
 }
 
