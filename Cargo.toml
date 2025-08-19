@@ -1,4 +1,12 @@
 [package]
+authors = ["Daniel Brotsky <dev@brotsky.com>"]
+description = "Linux keyutils-based credential store for the keyring-core"
+keywords = ["linux", "keyutils", "credential-store", "keyring-core"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/open-source-cooperative/linux-keyutils-keyring-store.git"
+rust-version = "1.85"
+exclude = [".github/"]
+readme = "README.md"
 name = "linux-keyutils-keyring-store"
 version = "0.1.0"
 edition = "2024"
