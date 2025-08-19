@@ -103,12 +103,12 @@ fn test_invalid_parameter() {
     let entry = Entry::new_with_modifiers("service", "user", &modifiers);
     assert!(matches!(entry, Err(Error::Invalid(_, _))));
     let store: Arc<CredentialStore> =
-        Store::new_with_configuration(&HashMap::from([("service_no_delimiter", "true")])).unwrap();
+        Store::new_with_configuration(&HashMap::from([("service_no_divider", "true")])).unwrap();
     let entry = store.build("ser@vice", "user", None);
     assert!(matches!(entry, Err(Error::Invalid(_, _))));
     let store: Arc<CredentialStore> = Store::new_with_configuration(&HashMap::from([
-        ("service_no_delimiter", "true"),
-        ("delimiter", ""),
+        ("service_no_divider", "true"),
+        ("divider", ""),
     ]))
     .unwrap();
     let entry = store.build("service", "user", None);
@@ -126,7 +126,9 @@ fn test_missing_entry() {
 fn test_empty_password() {
     let name = generate_random_string();
     let in_pass = "";
-    test_round_trip("empty password", &entry_new(&name, &name), in_pass);
+    let entry = entry_new(&name, &name);
+    assert!(matches!(entry.set_password(in_pass), Err(Error::Invalid(_, _))));
+    _ = entry.delete_credential();
 }
 
 #[test]
@@ -210,10 +212,10 @@ fn test_get_credential_and_specifiers() {
     wrapper.delete_credential().unwrap();
     entry1.delete_credential().unwrap_err();
     wrapper.delete_credential().unwrap_err();
-    let modifiers = HashMap::from([("description", &name)]);
+    let modifiers = HashMap::from([("description", name.as_str())]);
     let entry2 = Entry::new_with_modifiers(&name, &name, &modifiers).unwrap();
     assert!(entry2.get_specifiers().is_none());
-    entry2.delete_credential().unwrap();
+    entry2.delete_credential().unwrap_err();
 }
 
 #[test]

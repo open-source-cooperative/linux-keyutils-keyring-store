@@ -77,6 +77,7 @@ impl CredentialApi for Cred {
     fn get_credential(&self) -> keyring_core::Result<Option<Arc<Credential>>> {
         self.session
             .search(&self.description)
+            .map_err(KeyStoreError::from)
             .map_err(keyring_core::Error::from)?;
         Ok(None)
     }
@@ -110,7 +111,7 @@ impl Cred {
     pub fn build_from_specifiers(
         target: Option<&str>,
         delimiters: &[String; 3],
-        service_no_delimiters: bool,
+        service_no_dividers: bool,
         service: &str,
         user: &str,
     ) -> keyring_core::error::Result<Self> {
@@ -118,7 +119,7 @@ impl Cred {
         let (description, specifiers) = match target {
             Some(value) => (value.to_string(), None),
             None => {
-                if service_no_delimiters && service.contains(delimiters[1].as_str()) {
+                if service_no_dividers && service.contains(delimiters[1].as_str()) {
                     return Err(Error::Invalid(
                         "service".to_string(),
                         "cannot contain delimiter".to_string(),

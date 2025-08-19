@@ -15,7 +15,7 @@ use super::Cred;
 pub struct Store {
     pub id: String,
     pub delimiters: [String; 3],
-    pub service_no_delimiter: bool,
+    pub service_no_divider: bool,
 }
 
 impl Store {
@@ -35,10 +35,10 @@ impl Store {
     /// default to `keyring:`, `@`, and the empty string.
     ///
     /// If you want to be sure that key descriptions cannot be ambiguous, specify
-    /// the config option `service_no_delimiter` to `true`.
+    /// the config option `service_no_divider` to `true`.
     pub fn new_with_configuration(config: &HashMap<&str, &str>) -> Result<Arc<Self>> {
         let config = parse_attributes(
-            &["prefix", "divider", "suffix", "service_no_delimiter"],
+            &["prefix", "divider", "suffix", "service_no_divider"],
             config,
         )?;
         let prefix = config
@@ -56,24 +56,24 @@ impl Store {
             .map(|s| s.as_str())
             .unwrap_or("")
             .to_string();
-        let service_no_delimiter = match config.get("service_no_delimiter").map(|s| s.as_str()) {
+        let service_no_divider = match config.get("service_no_divider").map(|s| s.as_str()) {
             None => false,
             Some("true") => true,
             Some("false") => false,
             Some(_) => {
                 return Err(Error::Invalid(
-                    "service_no_delimiter".to_string(),
+                    "service_no_divider".to_string(),
                     "must be true or false".to_string(),
                 ));
             }
         };
         Ok(Self::new_internal(
             [prefix, divider, suffix],
-            service_no_delimiter,
+            service_no_divider,
         ))
     }
 
-    fn new_internal(delimiters: [String; 3], service_no_delimiter: bool) -> Arc<Self> {
+    fn new_internal(delimiters: [String; 3], service_no_divider: bool) -> Arc<Self> {
         let now = SystemTime::now();
         let elapsed = if now.lt(&UNIX_EPOCH) {
             UNIX_EPOCH.duration_since(now).unwrap()
@@ -87,7 +87,7 @@ impl Store {
                 elapsed.as_secs_f64()
             ),
             delimiters,
-            service_no_delimiter,
+            service_no_divider,
         })
     }
 }
@@ -118,7 +118,7 @@ impl CredentialStoreApi for Store {
         let cred = Cred::build_from_specifiers(
             description,
             &self.delimiters,
-            self.service_no_delimiter,
+            self.service_no_divider,
             service,
             user,
         )?;
