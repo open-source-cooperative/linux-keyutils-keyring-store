@@ -1,5 +1,5 @@
 [package]
-authors = ["Daniel Brotsky <dev@brotsky.com>"]
+authors = ["Daniel Brotsky <dev@brotsky.com>", "landhb <landhb@users.noreply.github.com>"]
 description = "Linux keyutils-based credential store for the keyring-core"
 keywords = ["linux", "keyutils", "credential-store", "keyring-core"]
 license = "MIT OR Apache-2.0"
