@@ -29,16 +29,16 @@ pub struct Cred {
 }
 
 impl CredentialApi for Cred {
-    /// Set a password in the underlying store
+    /// See the keyring-core API docs.
     ///
     /// This will overwrite the entry if it already exists since
     /// it's using `add_key` under the hood.
     ///
-    /// Returns an [Invalid](keyring_core::error::Error::Invalid) error if the password
+    /// Returns an [Invalid](Error::Invalid) error if the password
     /// is empty, because keyutils keys cannot have empty values.
     fn set_secret(&self, secret: &[u8]) -> keyring_core::error::Result<()> {
         if secret.is_empty() {
-            return Err(keyring_core::error::Error::Invalid(
+            return Err(Error::Invalid(
                 "secret".to_string(),
                 "cannot be empty".to_string(),
             ));
@@ -47,7 +47,7 @@ impl CredentialApi for Cred {
         Ok(())
     }
 
-    /// Retrieve a secret from the underlying store
+    /// See the keyring-core API docs.
     ///
     /// This requires a call to `Key::read`.
     fn get_secret(&self) -> keyring_core::error::Result<Vec<u8>> {
@@ -55,7 +55,7 @@ impl CredentialApi for Cred {
         Ok(buffer)
     }
 
-    /// Delete a password from the underlying store.
+    /// See the keyring-core API docs.
     ///
     /// Under the hood this uses `Key::invalidate` to immediately
     /// invalidate the key and prevent any further successful
@@ -63,8 +63,8 @@ impl CredentialApi for Cred {
     ///
     /// Note that the keyutils implementation uses caching,
     /// and the caches take some time to clear,
-    /// so a key that has been invalidated may still be found
-    /// by get_password if it's called within milliseconds
+    /// so get_password may find a key that has been invalidated
+    /// if it's called within milliseconds of the invalidation
     /// in *the same process* that deleted the key.
     fn delete_credential(&self) -> keyring_core::error::Result<()> {
         self.remove()?;
@@ -89,14 +89,12 @@ impl CredentialApi for Cred {
         self.specifiers.clone()
     }
 
-    /// Cast the credential object to std::any::Any.  This allows clients
-    /// to downcast the credential to its concrete type so they
-    /// can do platform-specific things with it.
+    /// See the keyring-core API docs.
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
 
-    /// Expose the concrete debug formatter for use via the [keyring_core::Credential] trait
+    /// See the keyring-core API docs.
     fn debug_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Debug::fmt(self, f)
     }
@@ -130,7 +128,7 @@ impl Cred {
                         "{}{user}{}{service}{}",
                         delimiters[0], delimiters[1], delimiters[2]
                     ),
-                    Some((user.to_string(), service.to_string())),
+                    Some((service.to_string(), user.to_string())),
                 )
             }
         };
@@ -141,7 +139,7 @@ impl Cred {
             ));
         }
 
-        // Obtain the session keyring
+        // Get the session keyring
         let session = KeyRing::from_special_id(KeyRingIdentifier::Session, false)
             .map_err(|e| NoStorageAccess(e.into()))?;
 
