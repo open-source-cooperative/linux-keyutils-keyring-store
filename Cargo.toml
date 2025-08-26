@@ -1,7 +1,8 @@
 [package]
 authors = ["Daniel Brotsky <dev@brotsky.com>", "landhb <landhb@users.noreply.github.com>"]
-description = "Linux keyutils-based credential store for the keyring-core"
-keywords = ["linux", "keyutils", "credential-store", "keyring-core"]
+description = "Linux Keyutils credential store for keyring"
+homepage = "https://github.com/open-source-cooperative/keyring-rs/wiki/Keyring"
+keywords = ["linux", "keyutils", "credential-store", "keyring"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/open-source-cooperative/linux-keyutils-keyring-store.git"
 rust-version = "1.85"
@@ -15,7 +16,7 @@ edition = "2024"
 name = "example"
 
 [dependencies]
-keyring-core = { version = "0.4"}
+keyring-core = { version = "0.5"}
 linux-keyutils = { version = "0.2.4", features = ["std"] }
 
 [dev-dependencies]

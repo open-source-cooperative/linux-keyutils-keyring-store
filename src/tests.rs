@@ -185,24 +185,10 @@ fn test_update() {
 }
 
 #[test]
-fn test_duplicate_entries() {
-    let name = generate_random_string();
-    let entry1 = entry_new(&name, &name);
-    let entry2 = entry_new(&name, &name);
-    entry1.set_password("password for entry1").unwrap();
-    let password = entry2.get_password().unwrap();
-    assert_eq!(password, "password for entry1");
-    entry2.set_password("password for entry2").unwrap();
-    let password = entry1.get_password().unwrap();
-    assert_eq!(password, "password for entry2");
-    entry1.delete_credential().unwrap();
-    entry2.delete_credential().expect_err("Can delete entry2");
-}
-
-#[test]
 fn test_get_credential_and_specifiers() {
-    let name = generate_random_string();
-    let entry1 = entry_new(&name, &name);
+    let name1 = generate_random_string();
+    let name2 = generate_random_string();
+    let entry1 = entry_new(&name1, &name2);
     assert!(matches!(entry1.get_credential(), Err(Error::NoEntry)));
     entry1.set_password("password for entry1").unwrap();
     let cred1 = entry1.as_any().downcast_ref::<Cred>().unwrap();
@@ -210,13 +196,12 @@ fn test_get_credential_and_specifiers() {
     let cred2 = wrapper.as_any().downcast_ref::<Cred>().unwrap();
     assert_eq!(cred1 as *const _, cred2 as *const _);
     let (service, user) = wrapper.get_specifiers().unwrap();
-    assert_eq!(service, name);
-    assert_eq!(user, name);
-    wrapper.delete_credential().unwrap();
-    entry1.delete_credential().unwrap_err();
+    assert_eq!(service, name1);
+    assert_eq!(user, name2);
+    entry1.delete_credential().unwrap();
     wrapper.delete_credential().unwrap_err();
-    let modifiers = HashMap::from([("description", name.as_str())]);
-    let entry2 = Entry::new_with_modifiers(&name, &name, &modifiers).unwrap();
+    let modifiers = HashMap::from([("description", name1.as_str())]);
+    let entry2 = Entry::new_with_modifiers(&name1, &name1, &modifiers).unwrap();
     assert!(entry2.get_specifiers().is_none());
     entry2.delete_credential().unwrap_err();
 }

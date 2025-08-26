@@ -32,14 +32,14 @@ impl Store {
     /// Create a custom-configured store.
     ///
     /// The delimiter config options are `prefix`, `divider`, and `suffix`. They
-    /// default to `keyring:`, `@`, and the empty string.
+    /// default to `keyring:`, `@`, and the empty string, respectively.
     ///
     /// If you want to be sure that key descriptions cannot be ambiguous, specify
     /// the config option `service_no_divider` to `true`.
     pub fn new_with_configuration(config: &HashMap<&str, &str>) -> Result<Arc<Self>> {
         let config = parse_attributes(
             &["prefix", "divider", "suffix", "service_no_divider"],
-            config,
+            Some(config),
         )?;
         let prefix = config
             .get("prefix")
@@ -113,7 +113,7 @@ impl CredentialStoreApi for Store {
         user: &str,
         modifiers: Option<&HashMap<&str, &str>>,
     ) -> Result<Entry> {
-        let mods = parse_attributes(&["description"], modifiers.unwrap_or(&HashMap::new()))?;
+        let mods = parse_attributes(&["description"], modifiers)?;
         let description = mods.get("description").map(|s| s.as_str());
         let cred = Cred::build_from_specifiers(
             description,
