@@ -1,5 +1,13 @@
 [package]
-name = "linux-keyutils-keyring"
+authors = ["Daniel Brotsky <dev@brotsky.com>", "landhb <landhb@users.noreply.github.com>"]
+description = "Linux keyutils-based credential store for the keyring-core"
+keywords = ["linux", "keyutils", "credential-store", "keyring-core"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/open-source-cooperative/linux-keyutils-keyring-store.git"
+rust-version = "1.85"
+exclude = [".github/"]
+readme = "README.md"
+name = "linux-keyutils-keyring-store"
 version = "0.1.0"
 edition = "2024"
 
@@ -7,9 +15,12 @@ edition = "2024"
 name = "example"
 
 [dependencies]
-keyring = { version = "4.0.0-rc.1", default-features = false, path = "../keyring-rs" }
+keyring-core = { version = "0.4"}
 linux-keyutils = { version = "0.2.4", features = ["std"] }
 
 [dev-dependencies]
-fastrand = "2.3.0"
-rpassword = "7.4.0"
+fastrand = "2.3"
+rpassword = "7.4"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
