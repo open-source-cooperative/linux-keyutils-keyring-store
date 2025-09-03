@@ -6,7 +6,11 @@ This library provides a credential store for use with the [keyring ecosystem](ht
 
 ## Usage
 
-To use this keychain-compatible credential store provider, you must take a dependency on the [keyring-core crate](https://crates.io/crates/keyring-core) and on [this crate](https://crates.io/crates/linux-keyutils-keyring-store). Then you can instantiate a credential store and set it as your default credential store as shown in the [sample program](examples/example.rs) in this crate.
+To use this keychain-compatible credential store provider, you must take a dependency on the [keyring-core crate](https://crates.io/crates/keyring-core) and on [this crate](https://crates.io/crates/linux-keyutils-keyring-store). Then you can instantiate a credential store and set it as your default credential store as shown in the [sample program](https://github.com/open-source-cooperative/linux-keyutils-keyring-store/blob/main/examples/example.rs) in this crate.
+
+## Changelog
+
+See the [release history on GitHub](https://github.com/open-source-cooperative/linux-keyutils-keyring-store/releases) for full details.
 
 ## License
 
