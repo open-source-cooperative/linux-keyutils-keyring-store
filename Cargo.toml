@@ -16,7 +16,7 @@ edition = "2024"
 name = "example"
 
 [dependencies]
-keyring-core = { version = "0.6" }
+keyring-core = { version = "0.7" }
 linux-keyutils = { version = "0.2.4", features = ["std"] }
 
 [dev-dependencies]
