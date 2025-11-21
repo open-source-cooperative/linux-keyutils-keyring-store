@@ -3,10 +3,9 @@ use std::fmt::Formatter;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use keyring_core::Entry;
 use keyring_core::api::{CredentialPersistence, CredentialStoreApi};
 use keyring_core::attributes::parse_attributes;
-use keyring_core::error::{Error, Result};
+use keyring_core::{Entry, Result};
 
 use super::Cred;
 
@@ -38,7 +37,7 @@ impl Store {
     /// the config option `service_no_divider` to `true`.
     pub fn new_with_configuration(config: &HashMap<&str, &str>) -> Result<Arc<Self>> {
         let config = parse_attributes(
-            &["prefix", "divider", "suffix", "service_no_divider"],
+            &["prefix", "divider", "suffix", "*service_no_divider"],
             Some(config),
         )?;
         let prefix = config
@@ -56,17 +55,11 @@ impl Store {
             .map(|s| s.as_str())
             .unwrap_or("")
             .to_string();
-        let service_no_divider = match config.get("service_no_divider").map(|s| s.as_str()) {
-            None => false,
-            Some("true") => true,
-            Some("false") => false,
-            Some(_) => {
-                return Err(Error::Invalid(
-                    "service_no_divider".to_string(),
-                    "must be true or false".to_string(),
-                ));
-            }
-        };
+        let service_no_divider = config
+            .get("service_no_divider")
+            .map(|s| s.as_str())
+            .unwrap_or("false")
+            .eq("true");
         Ok(Self::new_internal(
             [prefix, divider, suffix],
             service_no_divider,

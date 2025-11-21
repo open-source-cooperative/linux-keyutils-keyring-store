@@ -32,8 +32,8 @@ delimiter string in the service string.
 # Attributes
 
 There is no notion of attribute other than the description supported by keyutils,
-so the [get_attributes](keyring::Entry::get_attributes)
-and [update_attributes](keyring::Entry::update_attributes)
+so the [get_attributes](keyring_core::Entry::get_attributes)
+and [update_attributes](keyring_core::Entry::update_attributes)
 calls are both no-ops for this credential store.
 
 # Persistence
