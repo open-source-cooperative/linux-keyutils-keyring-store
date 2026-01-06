@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::fmt::Formatter;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -10,11 +9,22 @@ use keyring_core::{Entry, Result};
 use super::Cred;
 
 /// The builder for keyutils credentials
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Store {
     pub id: String,
     pub delimiters: [String; 3],
     pub service_no_divider: bool,
+}
+
+impl std::fmt::Debug for Store {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Store")
+            .field("vendor", &self.vendor())
+            .field("id", &self.id())
+            .field("delimiters", &self.delimiters)
+            .field("service_no_divider", &self.service_no_divider)
+            .finish()
+    }
 }
 
 impl Store {
@@ -131,7 +141,7 @@ impl CredentialStoreApi for Store {
     }
 
     /// See the keychain-core API docs.
-    fn debug_fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn debug_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Debug::fmt(self, f)
     }
 }
