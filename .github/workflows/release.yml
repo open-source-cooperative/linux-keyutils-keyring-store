@@ -9,15 +9,10 @@ permissions:
   contents: read
 
 jobs:
-  ci:
-    name: CI
-    uses: $/.github/workflows/ci.yaml
-
   publish:
     name: Publish to crates.io
     runs-on: ubuntu-latest
     environment: release
-    needs: ci
     permissions:
       id-token: write
       contents: read
