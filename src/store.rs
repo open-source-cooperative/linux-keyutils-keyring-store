@@ -11,8 +11,11 @@ use super::Cred;
 /// The builder for keyutils credentials
 #[derive(Clone)]
 pub struct Store {
+    /// The store identifier, built from the crate version and the creation time.
     pub id: String,
+    /// The `prefix`, `divider`, and `suffix` used to build key descriptions from a `user` and a `service`.
     pub delimiters: [String; 3],
+    /// Whether to reject a `service` that contains the `divider`.
     pub service_no_divider: bool,
 }
 
