@@ -1,6 +1,6 @@
 # Linux Keyutils Keyring Store
 
-[![build](https://github.com/open-source-cooperative/linux-keyutils-keyring-store/actions/workflows/ci.yaml/badge.svg)](https://github.com/open-source-cooperative/linux-keyutils-keyring-store/actions) [![crates.io](https://img.shields.io/crates/v/linux-keyutils-keyring-store.svg?style=flat-square)](https://crates.io/crates/linux-keyutils-keyring-store) [![docs.rs](https://docs.rs/linux-keyutils-keyring-store/badge.svg)](https://docs.rs/linux-keyutils-keyring-store)
+[![build](https://github.com/open-source-cooperative/linux-keyutils-keyring-store/actions/workflows/ci.yaml/badge.svg)](https://github.com/open-source-cooperative/linux-keyutils-keyring-store/actions) [![crates.io](https://img.shields.io/crates/v/linux-keyutils-keyring-store.svg?style=flat-square)](https://crates.io/crates/linux-keyutils-keyring-store) [![docs.rs](https://docs.rs/linux-keyutils-keyring-store/badge.svg)](https://docs.rs/linux-keyutils-keyring-store) [![codecov](https://codecov.io/gh/open-source-cooperative/linux-keyutils-keyring-store/graph/badge.svg)](https://codecov.io/gh/open-source-cooperative/linux-keyutils-keyring-store)
 
 This library provides a credential store for use with the [keyring ecosystem](https://github.com/open-source-cooperative/keyring-rs/wiki/Keyring) that uses the Linux key-management facility (keyctl).
 
